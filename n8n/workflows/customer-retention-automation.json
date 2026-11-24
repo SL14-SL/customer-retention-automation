@@ -1,0 +1,938 @@
+{
+  "name": "Customer Retention Automation",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        640
+      ],
+      "id": "e9ef1105-c05a-4bc2-bd4c-49e4e78e49e3",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "={{ 'http://api:8000/retention/churn-simulation/rounds/' + $json.round_id + '/customers' }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "threshold",
+              "value": "0.8"
+            },
+            {
+              "name": "limit",
+              "value": "50"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        640
+      ],
+      "id": "141aaede-d456-4c6c-965b-360318b62222",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "customers",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        640
+      ],
+      "id": "6fde5a7f-ebb6-42fa-b463-0e816e0c16a4",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "offer_discount",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "1d0c03a2-c149-4884-a769-10b0e66cbd7a"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Offer_Discount"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "a7d4b852-c007-435f-bdb7-f1978ab566c3",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "send_email",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Send_Email"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "9ddf68b3-3199-47cf-b484-a846efcf0b3b",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "no_action",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "No_Action"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.5,
+      "position": [
+        896,
+        624
+      ],
+      "id": "0ea0f46b-ed1f-464c-889d-b21ded81c43a",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "=={{\n  {\n    case_id: $json.round_id + \":\" + $json.customer_id,\n    round_id: $json.round_id,\n    customer_id: $json.customer_id,\n    churn_probability: $json.churn_probability,\n    proposed_discount_percent: 10,\n    reason: \"Synthetic retention offer\"\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1216,
+        336
+      ],
+      "id": "2c778cf1-6581-4a97-8f18-ebbf9a178070",
+      "name": "Discount Proposal"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/retention/round-cases",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    round_id: $('Discount Proposal').item.json.round_id,\n    customer_id: $('Discount Proposal').item.json.customer_id,\n    action: \"offer_discount\"\n  }\n}}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": "={{ true }}"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1680,
+        352
+      ],
+      "id": "7f04d10a-aee4-47dc-974c-9a80089d37ed",
+      "name": "Create Retention Case"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.statusCode }}",
+                    "rightValue": 201,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    },
+                    "id": "afd4717b-45a2-4eaa-a736-1dc9bb943694"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Created"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "27abc38f-e5a5-4077-8ba2-cfa06a673b73",
+                    "leftValue": "={{ $json.statusCode }}",
+                    "rightValue": 409,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Duplicate"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.5,
+      "position": [
+        1920,
+        336
+      ],
+      "id": "25ed3151-3cb3-4897-bee9-39820c59e60d",
+      "name": "case created?"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "=={{\n  {\n    case_id: $('Discount Proposal').item.json.case_id,\n    customer_id: $('Discount Proposal').item.json.customer_id,\n    http_status: $json.statusCode,\n    result: \"skipped\",\n    reason: \"Retention case already exists\"\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2320,
+        352
+      ],
+      "id": "cc486061-2e82-4cd6-81a0-3419ec39cd2f",
+      "name": "Duplicate Case log"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1440,
+        336
+      ],
+      "id": "638c6d1c-638f-4126-bddc-f37a1d47fc2a",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "xgJZZISzlr5p0bkl",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/xgJZZISzlr5p0bkl",
+          "cachedResultName": "Retention Approval"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "case_id": "={{ $('Loop Over Items').item.json.case_id }}",
+            "customer_id": "={{ $('Loop Over Items').item.json.customer_id }}",
+            "round_id": "={{ $('Loop Over Items').item.json.round_id }}",
+            "churn_probability": "={{ $('Loop Over Items').item.json.churn_probability }}",
+            "proposed_discount_percent": "={{ $('Loop Over Items').item.json.proposed_discount_percent }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "case_id",
+              "displayName": "case_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "customer_id",
+              "displayName": "customer_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "round_id",
+              "displayName": "round_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "churn_probability",
+              "displayName": "churn_probability",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "proposed_discount_percent",
+              "displayName": "proposed_discount_percent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        2080,
+        0
+      ],
+      "id": "ca0926d0-f2da-4302-8624-dbce36bea9a7",
+      "name": "Start Retention Approval",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ 'Unexpected response from retention API: HTTP ' + $json.statusCode + ' - ' + JSON.stringify($json.body) }}"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        2272,
+        576
+      ],
+      "id": "493ac643-98c8-4e50-bd7d-b9014b904bf0",
+      "name": "Stop and Error"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{\n  'http://api:8000/retention/round-cases/'\n  + $('Discount Proposal').item.json.case_id\n  + '/dispatch-failed'\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2336,
+        16
+      ],
+      "id": "9fe703ac-251b-43e7-80d2-fd5dc34e9a71",
+      "name": "Mark Dispatch Failed"
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ 'Failed to start retention approval: ' + $('Discount Proposal').item.json.customer_id }}"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        2560,
+        16
+      ],
+      "id": "91947fa4-f8e3-47b2-872f-54f023f96943",
+      "name": "Stop and Error1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/retention/round-cases",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    round_id: $json.round_id,\n    customer_id: $json.customer_id,\n    action: \"send_email\"\n  }\n}}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1200,
+        640
+      ],
+      "id": "5ecfd002-b2d7-4fc0-957d-9e9f9899619d",
+      "name": "Create Outreach Case"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{\n  'http://api:8000/retention/round-cases/'\n  + $json.body.case_id\n  + '/email-job'\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1680,
+        640
+      ],
+      "id": "6753f0b6-ebb6-4079-a953-b912dcef5938",
+      "name": "Create Contact Email"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{\n  'http://api:8000/retention/round-cases/'\n  + $json.case_id\n  + '/simulate-email'\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1904,
+        640
+      ],
+      "id": "af2e0d78-a14f-47ee-b88b-e6a20e2aaf3e",
+      "name": "Simulate Contact Email"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/retention/round-cases",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    round_id: $json.round_id,\n    customer_id: $json.customer_id,\n    action: \"no_action\"\n  }\n}}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1136,
+        1040
+      ],
+      "id": "2ace88e5-add0-4cfc-98c9-9c9dc174bfab",
+      "name": "Record No Action"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.statusCode }}",
+                    "rightValue": 201,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    },
+                    "id": "f2d1f9e8-ca32-4095-adca-0621c251d5e7"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Created"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "63c0593c-0fff-420d-9858-aef6c4e3d1b0",
+                    "leftValue": "={{ $json.statusCode }}",
+                    "rightValue": 409,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Duplicate"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.5,
+      "position": [
+        1424,
+        640
+      ],
+      "id": "c7bbd9cf-82ad-4712-bd70-b60cf385ab7c",
+      "name": "Outreach Case Created?"
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ 'Unexpected outreach case response: HTTP ' + $json.statusCode }}"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        1040
+      ],
+      "id": "015e3569-ff9f-4b13-bb0b-47050b2b3df4",
+      "name": "Stop and Error2"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{\n  {\n    customer_id: $('Switch').item.json.customer_id,\n    round_id: $('Switch').item.json.round_id,\n    result: \"skipped_duplicate\",\n    http_status: $json.statusCode\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1680,
+        832
+      ],
+      "id": "a238f8be-5394-485c-804c-063b3b06e585",
+      "name": "Outreach Duplicate Log"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.statusCode }}",
+                    "rightValue": 201,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    },
+                    "id": "f2d1f9e8-ca32-4095-adca-0621c251d5e7"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Created"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "63c0593c-0fff-420d-9858-aef6c4e3d1b0",
+                    "leftValue": "={{ $json.statusCode }}",
+                    "rightValue": 409,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Duplicate"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.5,
+      "position": [
+        1344,
+        1024
+      ],
+      "id": "c4363f94-9465-4abb-a21e-a1ede02fec4f",
+      "name": "No Action Recorded?"
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ 'Unexpected no-action response: HTTP ' + $json.statusCode }}"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        1184
+      ],
+      "id": "c5814ab8-0bae-4f4b-80c5-4c4431098629",
+      "name": "Stop and Error3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b7ed1672-47cd-4881-8eaa-a1b972a5146b",
+              "name": "round_id",
+              "value": "day-060",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        640
+      ],
+      "id": "bd0db38e-4378-468c-bc8f-3ff75be047f9",
+      "name": "Simulation Config"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Simulation Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Discount Proposal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Outreach Case",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record No Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discount Proposal": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Retention Case": {
+      "main": [
+        [
+          {
+            "node": "case created?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "case created?": {
+      "main": [
+        [
+          {
+            "node": "Start Retention Approval",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Duplicate Case log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Create Retention Case",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Duplicate Case log": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Retention Approval": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Dispatch Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Dispatch Failed": {
+      "main": [
+        [
+          {
+            "node": "Stop and Error1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Outreach Case": {
+      "main": [
+        [
+          {
+            "node": "Outreach Case Created?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Contact Email": {
+      "main": [
+        [
+          {
+            "node": "Simulate Contact Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Outreach Case Created?": {
+      "main": [
+        [
+          {
+            "node": "Create Contact Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Outreach Duplicate Log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record No Action": {
+      "main": [
+        [
+          {
+            "node": "No Action Recorded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Action Recorded?": {
+      "main": [
+        [],
+        [],
+        [
+          {
+            "node": "Stop and Error3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simulation Config": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e84a43f7-77a5-4fbc-81db-ffc5b71b3aba",
+  "meta": {
+    "instanceId": "f317c2db52455feb7a68ae46040361871badf9bc388a19a365eeac246a1dd018"
+  },
+  "nodeGroups": [],
+  "id": "Z3YvpAaJI0UFcwXJ",
+  "tags": []
+}

@@ -1,0 +1,306 @@
+{
+  "name": "Retention Approval",
+  "nodes": [
+    {
+      "parameters": {
+        "resume": "form",
+        "formTitle": "Retention Discount Approval",
+        "formDescription": "={{\n  'Customer: '\n  + $('When Executed by Another Workflow').first().json.customer_id\n  + '\\nCase ID: '\n  + $('When Executed by Another Workflow').first().json.case_id\n  + '\\nSimulation round: '\n  + $('When Executed by Another Workflow').first().json.round_id\n  + '\\nSynthetic churn risk: '\n  + (\n      $('When Executed by Another Workflow')\n        .first().json.churn_probability * 100\n    ).toFixed(1) + '%'\n  + '\\nProposed discount: '\n  + $('When Executed by Another Workflow')\n      .first().json.proposed_discount_percent + '%'\n  + '\\n\\nApprove or reject this retention offer.'\n}}",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "decision",
+              "fieldType": "dropdown",
+              "defaultValue": "approved",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "approved"
+                  },
+                  {
+                    "option": "rejected"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        688,
+        112
+      ],
+      "id": "8f25c3c6-2714-46f7-836e-a62a05643133",
+      "name": "Wait",
+      "webhookId": "ff47510d-6e1a-4351-97ff-f4f18e52a389"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "c9d6ff60-801d-403e-8090-72391f9c58ca",
+              "leftValue": "={{ $json.decision }}",
+              "rightValue": "approved",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        864,
+        112
+      ],
+      "id": "ef59c75b-e80b-4cd4-8e7a-225ff58b712f",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{\n  'http://api:8000/retention/round-cases/'\n  + $('When Executed by Another Workflow').first().json.case_id\n  + '/decision'\n}}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    status: \"approved\",\n    approval_execution_id: String($execution.id)\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1312,
+        16
+      ],
+      "id": "09ffad58-6c63-4f39-aca3-1c5ec37a3468",
+      "name": "Save Approval"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{\n  'http://api:8000/retention/round-cases/'\n  + $('When Executed by Another Workflow').first().json.case_id\n  + '/decision'\n}}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    status: \"rejected\",\n    approval_execution_id: String($execution.id)\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1312,
+        208
+      ],
+      "id": "7967bdfd-d230-462e-b117-0358fe56ea87",
+      "name": "Save Rejection"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "case_id"
+            },
+            {
+              "name": "customer_id"
+            },
+            {
+              "name": "round_id"
+            },
+            {
+              "name": "churn_probability",
+              "type": "number"
+            },
+            {
+              "name": "proposed_discount_percent",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -16,
+        112
+      ],
+      "id": "199008e4-a303-4aa8-adfb-3985a20de383",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{\n  {\n    case_id: $json.case_id,\n    customer_id: $json.customer_id,\n    round_id: $json.round_id,\n    churn_probability: $json.churn_probability,\n    proposed_discount_percent: $json.proposed_discount_percent,\n    approval_url: $execution.resumeFormUrl\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        208,
+        112
+      ],
+      "id": "78a73863-96d1-47fb-8aaf-8f4c932ef6d2",
+      "name": "Prepare Approval Link"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{\n  'http://api:8000/retention/round-cases/'\n  + $('Prepare Approval Link').first().json.case_id\n  + '/approval-link'\n}}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    approval_url: $('Prepare Approval Link').first().json.approval_url,\n    approval_execution_id: String($execution.id),\n    proposed_discount_percent: $('Prepare Approval Link').first().json.proposed_discount_percent\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        432,
+        112
+      ],
+      "id": "97c91976-a3eb-44c0-a9fc-3d544169b775",
+      "name": "Register Approval Link"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{\n  'http://api:8000/retention/round-cases/'\n  + $json.case_id\n  + '/email-job'\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1536,
+        16
+      ],
+      "id": "ed5d8521-5ee3-4953-89f3-b9c628360c25",
+      "name": "Create Email Job"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{\n  'http://api:8000/retention/round-cases/'\n  + $json.case_id\n  + '/simulate-email'\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1760,
+        16
+      ],
+      "id": "bfb93b34-3bd7-454d-9ea0-0d3aa99dbc9c",
+      "name": "Simulate Email"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Save Approval",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save Rejection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Prepare Approval Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Approval Link": {
+      "main": [
+        [
+          {
+            "node": "Register Approval Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Register Approval Link": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Approval": {
+      "main": [
+        [
+          {
+            "node": "Create Email Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Email Job": {
+      "main": [
+        [
+          {
+            "node": "Simulate Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "31842d57-1ecd-4e66-b4c0-1d993c988ca2",
+  "meta": {
+    "instanceId": "ac5092927132fbc55e512b26a2bd1bd1ce8e810239955b5c04a89c7cd448ed56"
+  },
+  "nodeGroups": [],
+  "id": "xgJZZISzlr5p0bkl",
+  "tags": []
+}

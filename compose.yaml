@@ -1,0 +1,101 @@
+
+name: customer-retention-automation
+
+x-app: &app
+  image: customer-retention-automation:local
+  build: .
+
+services:
+  init-demo:
+    <<: *app
+    restart: "no"
+    command:
+      - python
+      - scripts/initialize_demo.py
+      - --data-dir
+      - /app/data
+    volumes:
+      - retention_data:/app/data
+
+  api:
+    <<: *app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8001:8000"
+    environment:
+      CHURN_SIM_DATABASE: /app/data/retention_churn_sim.sqlite
+    volumes:
+      - retention_data:/app/data
+    command:
+      - uvicorn
+      - customer_retention_automation.api.app:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    depends_on:
+      init-demo:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "from urllib.request import urlopen; urlopen('http://localhost:8000/health', timeout=5)"
+      interval: 10s
+      timeout: 6s
+      retries: 12
+
+  retention-dashboard:
+    <<: *app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8504:8503"
+    environment:
+      RETENTION_API_URL: http://api:8000
+    command:
+      - streamlit
+      - run
+      - retention_dashboard.py
+      - --server.address=0.0.0.0
+      - --server.port=8503
+      - --server.headless=true
+    depends_on:
+      api:
+        condition: service_healthy
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:2.48.7
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5679:5678"
+    environment:
+      GENERIC_TIMEZONE: Europe/Berlin
+      TZ: Europe/Berlin
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_EDITOR_BASE_URL: http://localhost:5679
+      WEBHOOK_URL: http://localhost:5679/
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      api:
+        condition: service_healthy
+
+  n8n-import:
+    image: docker.n8n.io/n8nio/n8n:2.48.7
+    profiles:
+      - setup
+    restart: "no"
+    entrypoint: ["n8n"]
+    command:
+      - import:workflow
+      - --separate
+      - --input=/workflows
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/workflows:ro
+
+volumes:
+  retention_data:
+  n8n_data:
