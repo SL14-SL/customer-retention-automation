@@ -308,6 +308,54 @@ uv run pytest -q
 
 Tests use isolated temporary SQLite databases and do not modify the running Docker demo.
 
+## Isolated End-to-End Testing
+
+A separate Docker Compose configuration allows testing a fresh installation without affecting the main demo.
+
+Start an isolated environment:
+
+```bash
+docker compose -p retention-e2e-check \
+  -f compose.yaml \
+  -f compose.e2e.yaml \
+  up -d --build
+```
+
+The isolated environment uses separate Docker volumes and ports:
+
+| Service | URL |
+|---|---|
+| FastAPI | http://localhost:8002/docs |
+| Streamlit | http://localhost:8505 |
+| n8n | http://localhost:5680 |
+
+After creating the n8n owner account, stop n8n and import the workflows:
+
+```bash
+docker compose -p retention-e2e-check \
+  -f compose.yaml -f compose.e2e.yaml stop n8n
+
+docker compose -p retention-e2e-check \
+  -f compose.yaml -f compose.e2e.yaml \
+  --profile setup run --rm --no-deps n8n-import
+
+docker compose -p retention-e2e-check \
+  -f compose.yaml -f compose.e2e.yaml start n8n
+```
+
+Open the imported workflows in n8n and execute the `day-000` simulation. Verify that discount approvals are processed and reflected in the Streamlit dashboard.
+
+Remove only the isolated test environment:
+
+```bash
+docker compose -p retention-e2e-check \
+  -f compose.yaml \
+  -f compose.e2e.yaml \
+  down -v
+```
+
+**Warning:** This removes the test environment's volumes and data. It does not remove the main demo's volumes.
+
 ## Data and Persistence
 
 Two separate Docker volumes persist application data:

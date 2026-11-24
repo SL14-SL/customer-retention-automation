@@ -1,0 +1,19 @@
+
+# Isolated end-to-end installation test.
+# Use only with the retention-e2e-check Compose project.
+
+services:
+  api:
+    ports: !override
+      - "127.0.0.1:8002:8000"
+
+  retention-dashboard:
+    ports: !override
+      - "127.0.0.1:8505:8503"
+
+  n8n:
+    ports: !override
+      - "127.0.0.1:5680:5678"
+    environment:
+      N8N_EDITOR_BASE_URL: http://localhost:5680
+      WEBHOOK_URL: http://localhost:5680/
