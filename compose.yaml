@@ -24,6 +24,7 @@ services:
       - "127.0.0.1:8001:8000"
     environment:
       CHURN_SIM_DATABASE: /app/data/retention_churn_sim.sqlite
+      RETENTION_API_KEY: ${RETENTION_API_KEY:?RETENTION_API_KEY must be configured}
     volumes:
       - retention_data:/app/data
     command:

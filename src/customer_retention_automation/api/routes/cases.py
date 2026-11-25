@@ -1,6 +1,6 @@
 """API endpoints for round-specific retention cases."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from customer_retention_automation.api.config import (
     churn_simulation_database,
@@ -9,6 +9,9 @@ from customer_retention_automation.api.schemas import (
     RoundApprovalLinkRequest,
     RoundCaseDecisionRequest,
     RoundCaseRequest,
+)
+from customer_retention_automation.api.security import (
+    require_api_key,
 )
 from customer_retention_automation.retention.round_cases import (
     RoundCaseConflictError,
@@ -26,7 +29,11 @@ router = APIRouter(
 )
 
 
-@router.post("", status_code=201)
+@router.post(
+    "",
+    status_code=201,
+    dependencies=[Depends(require_api_key)],
+)
 def create_retention_round_case(payload: RoundCaseRequest) -> dict:
     """Create a customer case for one evaluation round."""
     database = churn_simulation_database()
@@ -97,7 +104,10 @@ def get_retention_round_case(case_id: str) -> dict:
     return case
 
 
-@router.post("/{case_id}/decision")
+@router.post(
+    "/{case_id}/decision",
+    dependencies=[Depends(require_api_key)],
+)
 def decide_retention_round_case(
     case_id: str,
     payload: RoundCaseDecisionRequest,
@@ -127,7 +137,10 @@ def decide_retention_round_case(
         ) from exc
 
 
-@router.post("/{case_id}/approval-link")
+@router.post(
+    "/{case_id}/approval-link",
+    dependencies=[Depends(require_api_key)],
+)
 def register_retention_round_approval_link(
     case_id: str,
     payload: RoundApprovalLinkRequest,
@@ -163,7 +176,10 @@ def register_retention_round_approval_link(
     }
 
 
-@router.post("/{case_id}/dispatch-failed")
+@router.post(
+    "/{case_id}/dispatch-failed",
+    dependencies=[Depends(require_api_key)],
+)
 def mark_retention_round_dispatch_failed(case_id: str) -> dict:
     """Record a failed approval dispatch."""
     try:

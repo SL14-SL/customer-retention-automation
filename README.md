@@ -104,7 +104,36 @@ git clone https://github.com/SL14-SL/customer-retention-automation.git
 cd customer-retention-automation
 ```
 
-### 2. Start the application
+### 2. Configure API authentication
+
+The Docker Compose deployment uses API-key authentication to protect state-changing retention operations.
+
+Generate a random API key:
+
+```bash
+docker run --rm python:3.12.9-slim \
+  python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Alternatively, if Python and uv are installed locally:
+
+```bash
+uv run python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Create a `.env` file in the project root:
+
+```dotenv
+RETENTION_API_KEY=your-generated-secret
+```
+
+Replace `your-generated-secret` with the generated value.
+
+The `.env` file is excluded from version control.
+
+### 3. Start the application
+
+Start the Docker Compose services:
 
 ```bash
 docker compose up --build -d
@@ -128,32 +157,46 @@ docker compose ps -a
 
 The `init-demo` service should finish with exit code 0.
 
-### 3. Set up n8n
+The API should report a healthy status.
+
+### 4. Set up n8n
 
 Open http://localhost:5679 and complete the initial n8n owner-account setup.
 
-Once the account has been created, import the workflows using:
+Once the account has been created, initialize the API credential and import both workflows:
 
 ```bash
-./scripts/setup_n8n.sh
+bash scripts/setup_n8n.sh --provision-credential
 ```
 
-The script:
+The setup script:
 
-1. Stops the n8n service temporarily.
-2. Imports the two workflow JSON files from `n8n/workflows/`.
-3. Restarts n8n.
+1. Temporarily stops the n8n service.
+2. Reads the API key from the local `.env` file.
+3. Creates and imports the `Retention API` Header Auth credential.
+4. Imports both workflow definitions from `n8n/workflows/`.
+5. Restarts n8n.
 
-The exported workflow IDs and subworkflow references are aligned, so no manual workflow-ID editing should be necessary.
+The HTTP Request nodes automatically reference the imported credential.
+
+The exported workflow IDs, subworkflow references, and credential IDs are aligned. No manual workflow or credential configuration is required after a successful fresh installation.
 
 Open n8n and verify that the following workflows are available:
 
 - `Customer Retention Automation`
 - `Retention Approval`
 
-The workflow import is a one-time setup step. Existing workflows persist in the n8n Docker volume across restarts.
+The credential and workflows persist in the n8n Docker volume across container restarts.
 
-Do not rerun the import script unnecessarily on an installation where workflows have been edited, because importing can replace existing workflow definitions.
+**Note:** The import is intended for initial setup. Reimporting workflows or credentials may overwrite existing definitions or credentials with matching IDs.
+
+For subsequent application starts, the normal command is sufficient:
+
+```bash
+docker compose up -d
+```
+
+There is no need to repeat the n8n import after every restart.
 
 ## Running the Demo
 
@@ -225,7 +268,7 @@ The script submits decisions through the existing signed n8n approval forms and 
 
 Repeat the workflow execution and approval simulation for `day-030` and `day-060`.
 
-### Approval Monitoring
+#### Approval Monitoring
 
 ![Discount Approval Decisions](docs/images/dashboard-approvals.png)
 
@@ -247,7 +290,7 @@ The dashboard contains five views:
 
 The dashboard reads data from FastAPI and updates as cases progress through the workflows.
 
-### Customer History
+#### Customer History
 
 ![Individual Customer History](docs/images/dashboard-customer-history.png)
 
@@ -369,17 +412,79 @@ Normal container restarts preserve these volumes.
 
 **Warning:** Running `docker compose down -v` permanently removes the volumes and their data for this Compose project, including the n8n configuration and execution history.
 
-## Limitations
+## Demo Scope and Assumptions
 
-This project is a portfolio demonstration, not a production customer retention platform.
+This project is a self-contained demonstration of an automated customer retention workflow.
 
-- All customer data is synthetic.
-- Churn probabilities are simulated rather than predicted by a trained ML model.
-- Retention policies are demonstration rules, not experimentally validated interventions.
-- Email delivery is simulated; no external email provider is contacted.
-- Approval decisions may be simulated for demonstration purposes.
-- The application does not measure real customer retention uplift or causal effects.
-- Authentication, authorization, secrets management, and production deployment hardening would be required before using the architecture with real customer data.
+The following design choices keep the demonstration reproducible and independent of external services:
+
+- **Synthetic customer data:** The simulation uses 300 fictional customers and contains no real customer information.
+- **Synthetic churn-risk scores:** Customer risk probabilities are generated for demonstration purposes rather than produced by a trained machine learning model.
+- **Simulated customer cancellations:** Churn events are generated deterministically to demonstrate customer lifecycle changes across simulation rounds.
+- **Simulated customer communication:** Email jobs are created and processed without contacting an external email provider.
+- **Demonstration retention policies:** Retention actions and discount proposals follow predefined rules rather than experimentally validated intervention strategies.
+- **Simulated approval decisions:** Human approval workflows can be demonstrated interactively or processed using reproducible simulated decisions.
+
+These characteristics are intentional design choices rather than missing implementation features.
+
+The simulation demonstrates workflow orchestration, state management, approval handling, and customer lifecycle tracking. It does not establish the predictive accuracy of a trained churn model or measure the causal impact of retention interventions.
+
+## API Security
+
+The application implements API-key authentication for state-changing retention operations.
+
+When `RETENTION_API_KEY` is configured, all POST endpoints require a valid `X-API-Key` header.
+
+| Request | Expected response |
+|---|---|
+| `GET /health` without authentication | HTTP 200 |
+| POST request without an API key | HTTP 401 |
+| POST request with an invalid API key | HTTP 401 |
+| POST request with a valid API key | Processed normally |
+| POST request with a valid API key and invalid payload | HTTP 422 |
+
+The Docker Compose configuration requires an API key. For local development and automated testing, the application can also run without authentication when no key is configured.
+
+### n8n integration
+
+n8n authenticates its state-changing API requests using a shared Header Auth credential.
+
+The credential is automatically provisioned during initial setup and referenced by both imported workflows.
+
+The API key is read from the local `.env` file and is not included in the workflow JSON exports.
+
+The complete configuration procedure is described in the [Quick Start](#quick-start).
+
+## Production Considerations
+
+The application demonstrates a complete local retention automation workflow, including API-key authentication, credential provisioning, and persistent state management.
+
+A deployment involving real customer data would require additional infrastructure-specific considerations, such as:
+
+- Authentication and authorization for accessing customer information.
+- HTTPS and appropriate network access controls.
+- Production database infrastructure, backups, and recovery procedures.
+- Operational monitoring, audit logging, and security controls.
+- Integration with actual customer management and communication systems.
+
+The appropriate implementation depends on the target environment, organizational security requirements, and existing infrastructure.
+
+## Related Project
+
+This project focuses on the operational side of customer retention: transforming churn-risk scores into automated workflows, human approval decisions, and customer outreach.
+
+For a complementary implementation of the machine learning lifecycle, see:
+
+**[MLOps Churn Prediction](https://github.com/SL14-SL/mlops-churn-prediction)**
+
+That project demonstrates model training, churn prediction, evaluation, deployment, monitoring, and model lifecycle management.
+
+Together, the two projects illustrate complementary components of an ML-driven customer retention architecture:
+
+- **MLOps Churn Prediction:** Producing, deploying, and monitoring churn predictions.
+- **Customer Retention Automation:** Processing churn-risk scores and coordinating retention actions.
+
+The projects are independent implementations and are not directly integrated.
 
 ## License
 

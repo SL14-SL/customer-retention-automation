@@ -1,9 +1,12 @@
 """API endpoints for simulated retention emails."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from customer_retention_automation.api.config import (
     churn_simulation_database,
+)
+from customer_retention_automation.api.security import (
+    require_api_key,
 )
 from customer_retention_automation.retention.round_cases import (
     RoundCaseConflictError,
@@ -22,6 +25,7 @@ router = APIRouter(
 @router.post(
     "/retention/round-cases/{case_id}/email-job",
     status_code=201,
+    dependencies=[Depends(require_api_key)],
 )
 def create_retention_round_email_job(case_id: str) -> dict:
     """Create an email job for an eligible retention case."""
@@ -50,7 +54,10 @@ def create_retention_round_email_job(case_id: str) -> dict:
     return job
 
 
-@router.post("/retention/round-cases/{case_id}/simulate-email")
+@router.post(
+    "/retention/round-cases/{case_id}/simulate-email",
+    dependencies=[Depends(require_api_key)],
+)
 def simulate_retention_round_email(case_id: str) -> dict:
     """Simulate delivery and complete an eligible retention case."""
     try:

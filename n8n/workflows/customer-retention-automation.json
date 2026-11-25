@@ -161,6 +161,8 @@
       "parameters": {
         "method": "POST",
         "url": "http://api:8000/retention/round-cases",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{\n  {\n    round_id: $('Discount Proposal').item.json.round_id,\n    customer_id: $('Discount Proposal').item.json.customer_id,\n    action: \"offer_discount\"\n  }\n}}",
@@ -180,7 +182,13 @@
         352
       ],
       "id": "7f04d10a-aee4-47dc-974c-9a80089d37ed",
-      "name": "Create Retention Case"
+      "name": "Create Retention Case",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1OoEC812MPns7ct1",
+          "name": "Retention API"
+        }
+      }
     },
     {
       "parameters": {
@@ -281,9 +289,9 @@
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "xgJZZISzlr5p0bkl",
+          "value": "KqiiswMYCWIfeEkX",
           "mode": "list",
-          "cachedResultUrl": "/workflow/xgJZZISzlr5p0bkl",
+          "cachedResultUrl": "/workflow/KqiiswMYCWIfeEkX",
           "cachedResultName": "Retention Approval"
         },
         "workflowInputs": {
@@ -378,6 +386,8 @@
       "parameters": {
         "method": "POST",
         "url": "={{\n  'http://api:8000/retention/round-cases/'\n  + $('Discount Proposal').item.json.case_id\n  + '/dispatch-failed'\n}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -387,7 +397,13 @@
         16
       ],
       "id": "9fe703ac-251b-43e7-80d2-fd5dc34e9a71",
-      "name": "Mark Dispatch Failed"
+      "name": "Mark Dispatch Failed",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1OoEC812MPns7ct1",
+          "name": "Retention API"
+        }
+      }
     },
     {
       "parameters": {
@@ -406,6 +422,8 @@
       "parameters": {
         "method": "POST",
         "url": "http://api:8000/retention/round-cases",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{\n  {\n    round_id: $json.round_id,\n    customer_id: $json.customer_id,\n    action: \"send_email\"\n  }\n}}",
@@ -425,12 +443,20 @@
         640
       ],
       "id": "5ecfd002-b2d7-4fc0-957d-9e9f9899619d",
-      "name": "Create Outreach Case"
+      "name": "Create Outreach Case",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1OoEC812MPns7ct1",
+          "name": "Retention API"
+        }
+      }
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{\n  'http://api:8000/retention/round-cases/'\n  + $json.body.case_id\n  + '/email-job'\n}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -440,12 +466,20 @@
         640
       ],
       "id": "6753f0b6-ebb6-4079-a953-b912dcef5938",
-      "name": "Create Contact Email"
+      "name": "Create Contact Email",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1OoEC812MPns7ct1",
+          "name": "Retention API"
+        }
+      }
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{\n  'http://api:8000/retention/round-cases/'\n  + $json.case_id\n  + '/simulate-email'\n}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -455,12 +489,20 @@
         640
       ],
       "id": "af2e0d78-a14f-47ee-b88b-e6a20e2aaf3e",
-      "name": "Simulate Contact Email"
+      "name": "Simulate Contact Email",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1OoEC812MPns7ct1",
+          "name": "Retention API"
+        }
+      }
     },
     {
       "parameters": {
         "method": "POST",
         "url": "http://api:8000/retention/round-cases",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{\n  {\n    round_id: $json.round_id,\n    customer_id: $json.customer_id,\n    action: \"no_action\"\n  }\n}}",
@@ -480,7 +522,13 @@
         1040
       ],
       "id": "2ace88e5-add0-4cfc-98c9-9c9dc174bfab",
-      "name": "Record No Action"
+      "name": "Record No Action",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1OoEC812MPns7ct1",
+          "name": "Retention API"
+        }
+      }
     },
     {
       "parameters": {
@@ -664,7 +712,7 @@
             {
               "id": "b7ed1672-47cd-4881-8eaa-a1b972a5146b",
               "name": "round_id",
-              "value": "day-060",
+              "value": "day-000",
               "type": "string"
             }
           ]
@@ -928,7 +976,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "e84a43f7-77a5-4fbc-81db-ffc5b71b3aba",
+  "versionId": "60a49692-07d6-492e-b01b-b89f0737be2b",
   "meta": {
     "instanceId": "f317c2db52455feb7a68ae46040361871badf9bc388a19a365eeac246a1dd018"
   },
