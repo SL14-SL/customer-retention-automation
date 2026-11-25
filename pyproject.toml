@@ -1,6 +1,6 @@
 [project]
 name = "customer-retention-automation"
-version = "0.1.0"
+version = "1.0.0"
 description = "End-to-end customer retention automation with synthetic churn simulation, FastAPI, n8n human approvals, and Streamlit dashboards."
 readme = "README.md"
 authors = [
