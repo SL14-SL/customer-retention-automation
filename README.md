@@ -15,6 +15,11 @@ The dashboard provides an overview of retention activities across three simulati
 
 Screenshots show a completed demonstration run using synthetic customer data and simulated retention actions.
 
+### Project Case Studies
+
+- [English case study (PDF)](docs/customer-retention-automation-case-study-en.pdf)
+- [Deutsche Projektübersicht (PDF)](docs/customer-retention-automation-case-study-de.pdf)
+
 ## Features
 
 - **Synthetic customer simulation:** Generate 300 reproducible customer records with baseline churn probabilities.
