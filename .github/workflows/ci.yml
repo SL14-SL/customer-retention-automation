@@ -13,6 +13,9 @@ jobs:
     name: Lint and test
     runs-on: ubuntu-latest
 
+    env:
+      RETENTION_API_KEY: ci-placeholder
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,7 +41,7 @@ jobs:
         run: uv run pytest -q
 
       - name: Validate Docker Compose
-        run: RETENTION_API_KEY=ci-placeholder docker compose config --quiet
+        run: docker compose config --quiet
 
       - name: Build application image
         run: docker compose build api
