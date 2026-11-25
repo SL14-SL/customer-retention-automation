@@ -12,6 +12,12 @@ from customer_retention_automation.simulation.batch import (
 )
 
 
+@pytest.fixture(autouse=True)
+def disable_api_authentication(monkeypatch):
+    """Run existing API tests independently of local API credentials."""
+    monkeypatch.delenv("RETENTION_API_KEY", raising=False)
+
+
 @pytest.fixture
 def client(
     tmp_path: Path,

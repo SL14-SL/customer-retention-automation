@@ -31,10 +31,10 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        688,
-        112
+        704,
+        96
       ],
-      "id": "8f25c3c6-2714-46f7-836e-a62a05643133",
+      "id": "a5c22d25-8c00-49cb-be85-4cde9e4a7f64",
       "name": "Wait",
       "webhookId": "ff47510d-6e1a-4351-97ff-f4f18e52a389"
     },
@@ -65,16 +65,18 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.4,
       "position": [
-        864,
-        112
+        880,
+        96
       ],
-      "id": "ef59c75b-e80b-4cd4-8e7a-225ff58b712f",
+      "id": "d61c9544-0331-43ef-a32f-601a1fe3c648",
       "name": "If"
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{\n  'http://api:8000/retention/round-cases/'\n  + $('When Executed by Another Workflow').first().json.case_id\n  + '/decision'\n}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{\n  {\n    status: \"approved\",\n    approval_execution_id: String($execution.id)\n  }\n}}",
@@ -83,16 +85,24 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        1312,
-        16
+        1328,
+        0
       ],
-      "id": "09ffad58-6c63-4f39-aca3-1c5ec37a3468",
-      "name": "Save Approval"
+      "id": "72ec50ea-6786-409e-be9c-300959cdaa38",
+      "name": "Save Approval",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1OoEC812MPns7ct1",
+          "name": "Retention API"
+        }
+      }
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{\n  'http://api:8000/retention/round-cases/'\n  + $('When Executed by Another Workflow').first().json.case_id\n  + '/decision'\n}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{\n  {\n    status: \"rejected\",\n    approval_execution_id: String($execution.id)\n  }\n}}",
@@ -101,11 +111,17 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        1312,
-        208
+        1328,
+        192
       ],
-      "id": "7967bdfd-d230-462e-b117-0358fe56ea87",
-      "name": "Save Rejection"
+      "id": "c9a87c8c-ba3f-4764-894b-d826c54c9257",
+      "name": "Save Rejection",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1OoEC812MPns7ct1",
+          "name": "Retention API"
+        }
+      }
     },
     {
       "parameters": {
@@ -134,10 +150,10 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.3,
       "position": [
-        -16,
-        112
+        0,
+        96
       ],
-      "id": "199008e4-a303-4aa8-adfb-3985a20de383",
+      "id": "a25bf677-ba9c-4cee-adea-445b7d3f547b",
       "name": "When Executed by Another Workflow"
     },
     {
@@ -149,16 +165,18 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        208,
-        112
+        224,
+        96
       ],
-      "id": "78a73863-96d1-47fb-8aaf-8f4c932ef6d2",
+      "id": "39bd5f07-3d09-4eda-a0f3-22aaf3cbe77a",
       "name": "Prepare Approval Link"
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{\n  'http://api:8000/retention/round-cases/'\n  + $('Prepare Approval Link').first().json.case_id\n  + '/approval-link'\n}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{\n  {\n    approval_url: $('Prepare Approval Link').first().json.approval_url,\n    approval_execution_id: String($execution.id),\n    proposed_discount_percent: $('Prepare Approval Link').first().json.proposed_discount_percent\n  }\n}}",
@@ -167,41 +185,63 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        432,
-        112
+        448,
+        96
       ],
-      "id": "97c91976-a3eb-44c0-a9fc-3d544169b775",
-      "name": "Register Approval Link"
+      "id": "d9751cd3-f690-46e3-9464-734e8e86f0f5",
+      "name": "Register Approval Link",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1OoEC812MPns7ct1",
+          "name": "Retention API"
+        }
+      }
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{\n  'http://api:8000/retention/round-cases/'\n  + $json.case_id\n  + '/email-job'\n}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        1536,
-        16
+        1552,
+        0
       ],
-      "id": "ed5d8521-5ee3-4953-89f3-b9c628360c25",
-      "name": "Create Email Job"
+      "id": "7fd7a34d-01f1-4e84-a2dc-75edd3cd5f0e",
+      "name": "Create Email Job",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1OoEC812MPns7ct1",
+          "name": "Retention API"
+        }
+      }
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{\n  'http://api:8000/retention/round-cases/'\n  + $json.case_id\n  + '/simulate-email'\n}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        1760,
-        16
+        1776,
+        0
       ],
-      "id": "bfb93b34-3bd7-454d-9ea0-0d3aa99dbc9c",
-      "name": "Simulate Email"
+      "id": "340722ca-c84e-4dbc-9ecd-ff7d4f2b08bd",
+      "name": "Simulate Email",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1OoEC812MPns7ct1",
+          "name": "Retention API"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -296,11 +336,11 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "31842d57-1ecd-4e66-b4c0-1d993c988ca2",
+  "versionId": "39e5213c-f562-437e-84a0-c8222459be37",
   "meta": {
-    "instanceId": "ac5092927132fbc55e512b26a2bd1bd1ce8e810239955b5c04a89c7cd448ed56"
+    "instanceId": "f317c2db52455feb7a68ae46040361871badf9bc388a19a365eeac246a1dd018"
   },
   "nodeGroups": [],
-  "id": "xgJZZISzlr5p0bkl",
+  "id": "KqiiswMYCWIfeEkX",
   "tags": []
 }
