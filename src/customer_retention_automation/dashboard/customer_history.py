@@ -11,7 +11,7 @@ from customer_retention_automation.dashboard.api_client import (
 from customer_retention_automation.dashboard.data_processing import (
     customer_case_history,
 )
-from customer_retention_automation.dashboard.theme import GREEN
+from customer_retention_automation.dashboard.theme import GREEN, TERRACOTTA
 
 ACTION_LABELS = {
     "no_action": "No action",
@@ -135,7 +135,7 @@ def render_customer_history(cases: list[dict]) -> None:
         churn_marker = (
             alt.Chart(marker_frame)
             .mark_rule(
-                color="#BF735F",
+                color=TERRACOTTA,
                 strokeDash=[6, 4],
                 strokeWidth=2,
             )
