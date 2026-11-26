@@ -8,7 +8,7 @@ MUTED_GREEN = "#C5CECA"
 BACKGROUND = "#F2F6F4"
 WHITE = "#FFFFFF"
 TEXT = DARK_GREEN
-REJECTED = "#BF735F"
+TERRACOTTA = "#BF735F"
 
 ACTION_COLORS = {
     "No action": MUTED_GREEN,
@@ -18,5 +18,5 @@ ACTION_COLORS = {
 
 DECISION_COLORS = {
     "Approved": GREEN,
-    "Rejected": REJECTED,
+    "Rejected": TERRACOTTA,
 }
